@@ -1,4 +1,4 @@
-#ifdef REFACTO_CLASS
+#ifdef REFACTO_METHOD
 
 #ifdef _DEBUG
 

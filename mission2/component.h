@@ -2,12 +2,14 @@
 
 #include "my_type.h"
 
+extern int stack[10];
+
 class ComponentBase {
 public :
 	ComponentBase(const int id, const char* name) : id(id), name(name) {}
 	
-	virtual bool isValid() = 0;
-	virtual const char* getTestResult() const = 0;
+	virtual bool isValid() { return true;}
+	virtual const char* getFailResult() const { return "PASS"; }
 	const char* getName() const 
 	{
 		return name;
@@ -21,25 +23,24 @@ private :
 	const char* name;
 };
 
-/*
-enum CarType
-{
-    SEDAN = 1,
-    SUV,
-    TRUCK
-};
-*/
+
 
 class Sedan : public ComponentBase {
 public:
     Sedan() : ComponentBase(SEDAN, "SEDAN") {}
 	bool isValid() 
 	{
+		if (stack[CarType_Q] != SEDAN) return true;
+
+		if (stack[brakeSystem_Q] == CONTINENTAL)
+		{
+			return false;
+		}
 		return true;
 	}
-	const char* getTestResult() const 
+	const char* getFailResult() const
 	{
-		return "PASS\n";
+		return "Sedan에는 Continental제동장치 사용 불가";
 	}
 };
 
@@ -48,156 +49,160 @@ public:
 	Sub() : ComponentBase(SUV, "SUV") {}
 	bool isValid()
 	{
+		if (stack[CarType_Q] != SUV) return true;
+		if (stack[Engine_Q] == TOYOTA)
+		{
+			return false;
+		}
 		return true;
 	}
-	const char* getTestResult() const
+	const char* getFailResult() const
 	{
-		return "PASS\n";
+		return "SUV에는 TOYOTA엔진 사용 불가";
 	}
 };
+
 
 class Truck : public ComponentBase {
 public:
 	Truck() : ComponentBase(TRUCK, "TRUCK") {}
 	bool isValid()
 	{
+		if (stack[CarType_Q] != TRUCK) return true;
+		if (stack[Engine_Q] == WIA)
+		{
+			return false;
+		}
+		else if (stack[brakeSystem_Q] == MANDO)
+		{
+			return false;
+		}
 		return true;
 	}
-	const char* getTestResult() const
+	const char* getFailResult() const
 	{
-		return "PASS\n";
+		if (stack[Engine_Q] == WIA)
+		{
+			return "Truck에는 WIA엔진 사용 불가";
+		}
+		else if (stack[brakeSystem_Q] == MANDO)
+		{
+			return "Truck에는 Mando제동장치 사용 불가";
+		}
+		return "PASS";
 	}
 };
 
-/*
+class CarFactory {
+public:
+	static ComponentBase& getInstance(int id) {
+		static ComponentBase* Instance[NUM_CAR] = {
+			new Sedan,
+			new Sub,
+			new Truck,
+		};
 
-enum Engine
-{
-	GM = 1,
-	TOYOTA,
-	WIA
+		return *Instance[id - 1];
+
+	}
 };
-
-*/
 
 class Gm : public ComponentBase {
 public:
 	Gm() : ComponentBase(GM, "GM") {}
-	bool isValid()
-	{
-		return true;
-	}
-	const char* getTestResult() const
-	{
-		return "PASS\n";
-	}
 };
 
 class Toyota : public ComponentBase {
 public:
 	Toyota() : ComponentBase(TOYOTA, "TOYOTA") {}
-	bool isValid()
-	{
-		return true;
-	}
-	const char* getTestResult() const
-	{
-		return "PASS\n";
-	}
 };
 
 class Wia : public ComponentBase {
 public:
 	Wia() : ComponentBase(WIA, "WIA") {}
-	bool isValid()
-	{
-		return true;
-	}
-	const char* getTestResult() const
-	{
-		return "PASS\n";
+
+};
+
+class BedEngine : public ComponentBase {
+public:
+	BedEngine() : ComponentBase(BAD_ENGINE, "고장난 엔진") {}
+};
+
+class EngineFactory {
+public:
+	static ComponentBase& getInstance(int id) {
+		static ComponentBase* Instance[NUM_ENGINE] = {
+			new Gm,
+			new Toyota,
+			new Wia,
+			new BedEngine,
+		};
+
+		return *Instance[id -1];
+
 	}
 };
 
-/*
-enum BrakeSystem
-{
-	MANDO = 1,
-	CONTINENTAL,
-	BOSCH_B
-};
-*/
 
 class Mando : public ComponentBase {
 public:
 	Mando() : ComponentBase(MANDO, "MANDO") {}
-	bool isValid()
-	{
-		return true;
-	}
-	const char* getTestResult() const
-	{
-		return "PASS\n";
-	}
 };
 
 class Continental : public ComponentBase {
 public:
 	Continental() : ComponentBase(CONTINENTAL, "CONTINENTAL") {}
-	bool isValid()
-	{
-		return true;
-	}
-	const char* getTestResult() const
-	{
-		return "PASS\n";
-	}
 };
 
 class BoschB : public ComponentBase {
 public:
-	BoschB() : ComponentBase(BOSCH_B, "BOSCH_B") {}
+	BoschB() : ComponentBase(BOSCH_B, "BOSCH") {}
 	bool isValid()
 	{
+		if (stack[brakeSystem_Q] == BOSCH_B) return true;
+		if (stack[SteeringSystem_Q] != BOSCH_S)
+		{
+			return false;
+		}
 		return true;
 	}
-	const char* getTestResult() const
+	const char* getFailResult() const
 	{
-		return "PASS\n";
+		return "Bosch제동장치에는 Bosch조향장치 이외 사용 불가";
 	}
 };
 
+class BrakeSystemFactory {
+public:
+	static ComponentBase& getInstance(int id) {
+		static ComponentBase* Instance[NUM_BRAKE_SYSTEM] = {
+			new Mando,
+			new Continental,
+			new BoschB,
+		};
 
-/*
-enum SteeringSystem
-{
-	BOSCH_S = 1,
-	MOBIS
+		return *Instance[id -1];
+	}
 };
-*/
+
 class BoschS : public ComponentBase {
 public:
-	BoschS() : ComponentBase(BOSCH_S, "BOSCH_S") {}
-	bool isValid()
-	{
-		return true;
-	}
-	const char* getTestResult() const
-	{
-		return "PASS\n";
-	}
+	BoschS() : ComponentBase(BOSCH_S, "BOSCH") {}
 };
 
 class Mobis : public ComponentBase {
 public:
 	Mobis() : ComponentBase(MOBIS, "MOBIS") {}
-	bool isValid()
-	{
-		return true;
-	}
-	const char* getTestResult() const
-	{
-		return "PASS\n";
-	}
 };
 
+class SteeringSystemFactory {
+public:
+	static ComponentBase& getInstance(int id) {
+		static ComponentBase* Instance[NUM_STEERING_SYSTEM] = {
+			new BoschS,
+			new Mobis,
+		};
+
+		return *Instance[id -1];
+	}
+};

@@ -1,6 +1,7 @@
 #pragma once
 
-#include "my_type.h"
+#include "component.h"
+#include "step_factory.h"
 
 extern int stack[10];
 
@@ -8,9 +9,26 @@ extern int stack[10];
 class StepBase {
 
 public:
+    StepBase(int numComponent) : numComponent(numComponent) {}
     virtual  bool checkAnswer(int answer) = 0;
     virtual  void processFail() = 0;
     virtual  QuestionType execute(int answer) = 0;
+    virtual  ComponentBase* getComponent(int id) { return nullptr;  }
+
+    ComponentBase* findFailComponent() 
+    { 
+        for (int id = 1; id < numComponent; ++id)
+        {
+            ComponentBase* componentObj = getComponent(id);
+            if (false == componentObj->isValid())
+            {
+                return componentObj;
+            }
+
+        }
+
+        return nullptr;
+    }
 
     QuestionType goBack(QuestionType step, int answer)
     {
@@ -44,14 +62,15 @@ public:
             }
         }
     }
-
-    static int stack[10];
+private :
+    int numComponent;
 };
 
 
 
 class StepCarType : public StepBase {
 public:
+    StepCarType() : StepBase(NUM_CAR) {}
     bool checkAnswer(int answer)
     {
         if (answer >= 1 && answer <= 3)
@@ -73,6 +92,11 @@ public:
         delay(800);
         return Engine_Q;
     }
+
+    ComponentBase* getComponent(int id) 
+    { 
+        return &CarFactory::getInstance(id);
+    }
 private :
     void selectCarType(int answer)
     {
@@ -88,7 +112,7 @@ private :
 
 class StepEngine : public StepBase {
 public:
-
+    StepEngine() : StepBase(NUM_ENGINE) {}
     bool checkAnswer(int answer)
     {
         if (answer >= 0 && answer <= 4)
@@ -111,6 +135,10 @@ public:
         return brakeSystem_Q;;
     }
 
+    ComponentBase* getComponent(int id)
+    {
+        return &EngineFactory::getInstance(id);
+    }
 private:
     void selectEngine(int answer)
     {
@@ -127,7 +155,7 @@ private:
 
 class StepBrakeSystem : public StepBase {
 public:
-
+    StepBrakeSystem() : StepBase(NUM_BRAKE_SYSTEM) {}
     bool checkAnswer(int answer)
     {
         if (answer >= 0 && answer <= 3)
@@ -149,7 +177,10 @@ public:
         delay(800);
         return SteeringSystem_Q;;
     }
-
+    ComponentBase* getComponent(int id)
+    {
+        return &BrakeSystemFactory::getInstance(id);
+    }
 private:
     void selectbrakeSystem(int answer)
     {
@@ -166,7 +197,7 @@ private:
 
 class StepSteeringSystem : public StepBase {
 public:
-
+    StepSteeringSystem() : StepBase(NUM_STEERING_SYSTEM) {}
     bool checkAnswer(int answer)
     {
         if (answer >= 0 && answer <= 2)
@@ -189,6 +220,10 @@ public:
         return Run_Test;
     }
 
+    ComponentBase* getComponent(int id)
+    {
+        return &SteeringSystemFactory::getInstance(id);
+    }
 private:
     void selectSteeringSystem(int answer)
     {
@@ -203,7 +238,7 @@ private:
 
 class StepRunTest : public StepBase {
 public:
-
+    StepRunTest() : StepBase(0) {}
     bool checkAnswer(int answer)
     {
         if (answer >= 0 && answer <= 2)
@@ -237,35 +272,29 @@ public:
     }
 
 private:
+    bool isValid = true;
+    ComponentBase* failObj = nullptr;
+
     int isValidCheck()
-    {
-        if (stack[CarType_Q] == SEDAN && stack[brakeSystem_Q] == CONTINENTAL)
+    {  
+        isValid = true;
+        failObj = nullptr;
+        for (int step = 0; step < Run_Test; ++step)
+        {
+            StepBase&  stepObj =StepFactory::getInstance((QuestionType)step);
+            failObj = stepObj.findFailComponent();
+            if(failObj)
+            {
+                printf("%s\n", failObj->getName());
+                break; 
+            }
+        }
+        if (failObj)
         {
             return false;
-        }
-        else if (stack[CarType_Q] == SUV && stack[Engine_Q] == TOYOTA)
-        {
-            return false;
-        }
-        else if (stack[CarType_Q] == TRUCK && stack[Engine_Q] == WIA)
-        {
-            return false;
-        }
-        else if (stack[CarType_Q] == TRUCK && stack[brakeSystem_Q] == MANDO)
-        {
-            return false;
-        }
-        else if (stack[brakeSystem_Q] == BOSCH_B && stack[SteeringSystem_Q] != BOSCH_S)
-        {
-            return false;
-        }
-        else
-        {
-            return true;
         }
         return true;
     }
-
     void runProducedCar()
     {
         if (isValidCheck() == false)
@@ -311,51 +340,17 @@ private:
 
     void testProducedCar()
     {
-        if (stack[CarType_Q] == SEDAN && stack[brakeSystem_Q] == CONTINENTAL)
+        isValidCheck();
+        if (false == isValid)
         {
             printf("자동차 부품 조합 테스트 결과 : FAIL\n");
-            printf("Sedan에는 Continental제동장치 사용 불가\n");
-        }
-        else if (stack[CarType_Q] == SUV && stack[Engine_Q] == TOYOTA)
-        {
-            printf("자동차 부품 조합 테스트 결과 : FAIL\n");
-            printf("SUV에는 TOYOTA엔진 사용 불가\n");
-        }
-        else if (stack[CarType_Q] == TRUCK && stack[Engine_Q] == WIA)
-        {
-            printf("자동차 부품 조합 테스트 결과 : FAIL\n");
-            printf("Truck에는 WIA엔진 사용 불가\n");
-        }
-        else if (stack[CarType_Q] == TRUCK && stack[brakeSystem_Q] == MANDO)
-        {
-            printf("자동차 부품 조합 테스트 결과 : FAIL\n");
-            printf("Truck에는 Mando제동장치 사용 불가\n");
-        }
-        else if (stack[brakeSystem_Q] == BOSCH_B && stack[SteeringSystem_Q] != BOSCH_S)
-        {
-            printf("자동차 부품 조합 테스트 결과 : FAIL\n");
-            printf("Bosch제동장치에는 Bosch조향장치 이외 사용 불가\n");
+            printf("%s\n", failObj->getFailResult());
         }
         else
         {
             printf("자동차 부품 조합 테스트 결과 : PASS\n");
         }
+
     }
 };
 
-
-class StepFactory {
-public :
-    static StepBase& getInstance(QuestionType stpe) {
-        static StepBase* Instance[NumQuestion] = {
-            new StepCarType,
-            new StepEngine,
-            new StepBrakeSystem,
-            new StepSteeringSystem,
-            new StepRunTest,
-        };
-
-        return *Instance[stpe];
-    
-    }
-};

@@ -1,5 +1,3 @@
-
-
 #include "step.h"
 
-int StepBase::stack[10];
+int stack[10];

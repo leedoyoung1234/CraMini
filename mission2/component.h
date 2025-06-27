@@ -159,7 +159,7 @@ public:
 	BoschB() : ComponentBase(BOSCH_B, "BOSCH") {}
 	bool isValid()
 	{
-		if (stack[brakeSystem_Q] == BOSCH_B) return true;
+		if (stack[brakeSystem_Q] != BOSCH_B) return true;
 		if (stack[SteeringSystem_Q] != BOSCH_S)
 		{
 			return false;
